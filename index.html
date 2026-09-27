@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS Style Calculator - Premium</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --calc-bg: #000000;
+            --btn-gray: #333333;
+            --text-white: #ffffff;
+            --text-dark: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--calc-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 100vh;
+            max-height: 850px;
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        /* Top Bar & Status */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .status-badge {
+            background: #222;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .status-badge.premium {
+            background: var(--text-white);
+            color: var(--text-dark);
+        }
+
+        /* Display */
+        .display-container {
+            text-align: right;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .history-preview {
+            font-size: 16px;
+            color: #666;
+            min-height: 24px;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .result {
+            font-size: 64px;
+            font-weight: 300;
+            color: var(--text-white);
+            word-break: break-all;
+            line-height: 1.1;
+        }
+
+        /* Keypad */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button.btn {
+            background-color: var(--btn-gray);
+            color: var(--text-white);
+            border: none;
+            border-radius: 50%;
+            width: 100%;
+            aspect-ratio: 1;
+            font-size: 26px;
+            font-weight: 400;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: filter 0.2s;
+        }
+
+        button.btn:active {
+            filter: brightness(1.5);
+        }
+
+        button.btn-light {
+            background-color: #a5a5a5;
+            color: var(--text-dark);
+        }
+
+        button.btn-op {
+            background-color: var(--text-white);
+            color: var(--text-dark);
+            font-size: 30px;
+        }
+
+        button.zero {
+            grid-column: span 2;
+            border-radius: 40px;
+            aspect-ratio: auto;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+
+        /* Modals (History & Paywall) */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+            display: none;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content-box {
+            width: 100%;
+            max-height: 90vh;
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 24px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: #222;
+            border: none;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .modal-body {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        /* History List */
+        .history-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            color: #ccc;
+        }
+
+        /* Paywall Style */
+        .paywall-content {
+            text-align: center;
+        }
+
+        .paywall-content h3 {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .paywall-content p {
+            color: #888;
+            margin-bottom: 15px;
+            line-height: 1.3;
+            font-size: 12px;
+        }
+
+        .pricing-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .plan-card {
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .plan-card.selected {
+            border-color: var(--text-white);
+            background: #1a1a1a;
+        }
+
+        .plan-card h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .plan-card .price {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-white);
+        }
+
+        .upgrade-btn {
+            background: var(--text-white);
+            color: var(--text-dark);
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* QRIS & Form Section */
+        .qris-section {
+            display: none;
+            text-align: center;
+        }
+
+        .qris-img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 12px;
+            margin: 10px auto;
+            padding: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: #151515;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Top status bar -->
+        <div class="top-bar">
+            <div id="usageInfo">Free Left: <span id="freeCount">1</span>/1</div>
+            <div class="nav-links">
+                <div class="status-badge" onclick="openModal('historyModal')">History</div>
+                <div class="status-badge" id="badgeStatus" onclick="openModal('paywallModal')">Free Plan</div>
+            </div>
+        </div>
+
+        <!-- Calculator Display -->
+        <div class="display-container">
+            <div class="history-preview" id="historyPreview"></div>
+            <div class="result" id="display">0</div>
+        </div>
+
+        <!-- Calculator Keypad -->
+        <div class="keypad">
+            <button class="btn btn-light" onclick="clearAll()">AC</button>
+            <button class="btn btn-light" onclick="toggleSign()">±</button>
+            <button class="btn btn-light" onclick="percentage()">%</button>
+            <button class="btn btn-op" onclick="setOperation('÷')">÷</button>
+            
+            <button class="btn" onclick="appendNumber('7')">7</button>
+            <button class="btn" onclick="appendNumber('8')">8</button>
+            <button class="btn" onclick="appendNumber('9')">9</button>
+            <button class="btn btn-op" onclick="setOperation('×')">×</button>
+            
+            <button class="btn" onclick="appendNumber('4')">4</button>
+            <button class="btn" onclick="appendNumber('5')">5</button>
+            <button class="btn" onclick="appendNumber('6')">6</button>
+            <button class="btn btn-op" onclick="setOperation('-')">-</button>
+            
+            <button class="btn" onclick="appendNumber('1')">1</button>
+            <button class="btn" onclick="appendNumber('2')">2</button>
+            <button class="btn" onclick="appendNumber('3')">3</button>
+            <button class="btn btn-op" onclick="setOperation('+')">+</button>
+            
+            <button class="btn zero" onclick="appendNumber('0')">0</button>
+            <button class="btn" onclick="appendDecimal()">.</button>
+            <button class="btn btn-op" onclick="compute()">=</button>
+        </div>
+
+        <!-- Modal History -->
+        <div class="modal" id="historyModal">
+            <div class="modal-content-box">
+                <div class="modal-header">
+                    <h2>Calculation History</h2>
+                    <button class="close-btn" onclick="closeModal('historyModal')">✕</button>
+                </div>
+                <div class="modal-body" id="historyList">
+                    <p style="color: #666; text-align: center; margin-top: 40px;">No history yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Paywall & QRIS (Premium) -->
+        <div class="modal" id="paywallModal">
+            <div class="modal-content-box">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Unlock PRO</h2>
+                    <button class="close-btn" onclick="closeModal('paywallModal')">✕</button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Step 1: Pilih Paket -->
+                    <div id="stepPricing" class="paywall-content">
+                        <h3>Free Trial Limit Reached</h3>
+                        <p>You have used your 1 free trial. Upgrade to PRO to continue using operations without limits!</p>
+                        
+                        <div class="pricing-cards">
+                            <div class="plan-card selected" onclick="selectPlan(this, '$3,000')">
+                                <h4>Basic PRO</h4>
+                                <div class="price">$3,000</div>
+                            </div>
+                            <div class="plan-card" onclick="selectPlan(this, '$10,000')">
+                                <h4>Standard PRO</h4>
+                                <div class="price">$10,000</div>
+                            </div>
+                            <div class="plan-card" onclick="selectPlan(this, '$22,000')">
+                                <h4>Ultimate PRO</h4>
+                                <div class="price">$22,000</div>
+                            </div>
+                        </div>
+
+                        <button class="upgrade-btn" onclick="proceedToPayment()">Proceed to Payment</button>
+                    </div>
+
+                    <!-- Step 2: QRIS & Form Input -->
+                    <div id="stepPayment" class="qris-section">
+                        <p style="margin-bottom: 5px;">Scan QRIS below for <b id="selectedPlanText" style="color:#fff;">$3,000</b></p>
+                        
+                        <!-- Gambar QRIS disematkan langsung (Base64) agar tidak error/hilang -->
+                        <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=" alt="QRIS Code" class="qris-img" id="qrisImageDisplay">
+                        
+                        <!-- Menggunakan string SVG bawaan yang pasti tampil jika gambar gagal dibaca -->
+                        <div id="qrisFallback" style="width:180px;height:180px;background:#fff;margin:10px auto;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6CAAAgAElEQVR4Xu2dB5gcVfm33/t2V7KbrskmBBFBEk1oChXpgogFBRFRUbFj771XFESKhCqg2DvWBAQUKUIpCghIKCEJvWSySTbZ3Z29t//nO3Nvdmd3m81sNmSTfT35fPqce26emec75/vO9z7fV8T/P+kH9LgQAKLADwAonwEAnwEAvwEA//+2gAAAAASUVORK5CYII=" style="width:170px;height:170px;object-fit:contain;" alt="QRIS">
+                        </div>
+
+                        <p style="font-size: 10px; color: #888; margin-bottom: 10px;">Raisal - NMID: ID1026477115582 A01</p>
+
+                        <div class="form-group">
+                            <label>Your Name</label>
+                            <input type="text" id="buyerName" placeholder="Enter your full name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="buyerEmail" placeholder="Enter your email">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp Number</label>
+                            <input type="tel" id="buyerPhone" placeholder="Enter your phone number">
+                        </div>
+
+                        <button class="upgrade-btn" style="margin-top: 5px;" onclick="sendToWhatsApp()">Confirm & Send to WhatsApp</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let resetScreen = false;
+        
+        let freeLimit = 1;
+        let isPremium = false;
+        let calculationHistory = [];
+        let userActivityCount = 0;
+        let selectedPrice = '$3,000';
+
+        const display = document.getElementById('display');
+        const historyPreview = document.getElementById('historyPreview');
+        const freeCountEl = document.getElementById('freeCount');
+        const badgeStatus = document.getElementById('badgeStatus');
+        const usageInfo = document.getElementById('usageInfo');
+
+        function updateDisplay() {
+            display.innerText = currentInput;
+            freeCountEl.innerText = Math.max(0, freeLimit - userActivityCount);
+        }
+
+        function appendNumber(number) {
+            if (currentInput === '0' || resetScreen) {
+                currentInput = number;
+                resetScreen = false;
+            } else {
+                if (currentInput.length < 12) {
+                    currentInput += number;
+                }
+            }
+            updateDisplay();
+        }
+
+        function appendDecimal() {
+            if (resetScreen) {
+                currentInput = '0.';
+                resetScreen = false;
+                updateDisplay();
+                return;
+            }
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+                updateDisplay();
+            }
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            historyPreview.innerText = '';
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+
+        function percentage() {
+            currentInput = (parseFloat(currentInput) / 100).toString();
+            updateDisplay();
+        }
+
+        function setOperation(op) {
+            if (!isPremium) {
+                if (userActivityCount >= freeLimit) {
+                    openPaywallModal();
+                    return;
+                }
+            }
+
+            if (operation !== null) compute();
+            previousInput = currentInput;
+            operation = op;
+            historyPreview.innerText = `${previousInput} ${operation}`;
+            resetScreen = true;
+        }
+
+        function compute() {
+            if (operation === null || resetScreen) return;
+            
+            let computation;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    trackUsage();
+                    break;
+                case '-':
+                    computation = prev - current;
+                    trackUsage();
+                    break;
+                case '×':
+                    computation = prev * current;
+                    trackUsage();
+                    break;
+                case '÷':
+                    if (current === 0) {
+                        alert("Cannot divide by zero");
+                        clearAll();
+                        return;
+                    }
+                    computation = prev / current;
+                    trackUsage();
+                    break;
+                default:
+                    return;
+            }
+
+            const record = `${previousInput} ${operation} ${currentInput} = ${computation}`;
+            calculationHistory.unshift(record);
+            updateHistoryUI();
+
+            currentInput = parseFloat(computation.toFixed(8)).toString();
+            historyPreview.innerText = '';
+            operation = null;
+            resetScreen = true;
+            updateDisplay();
+        }
+
+        function trackUsage() {
+            if (!isPremium) {
+                userActivityCount++;
+                if (userActivityCount > freeLimit) {
+                    openPaywallModal();
+                }
+            }
+        }
+
+        function selectPlan(element, price) {
+            document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedPrice = price;
+        }
+
+        function proceedToPayment() {
+            document.getElementById('stepPricing').style.display = 'none';
+            document.getElementById('stepPayment').style.display = 'block';
+            document.getElementById('selectedPlanText').innerText = selectedPrice;
+            document.getElementById('modalTitle').innerText = 'QRIS Payment';
+        }
+
+        function sendToWhatsApp() {
+            const name = document.getElementById('buyerName').value.trim();
+            const email = document.getElementById('buyerEmail').value.trim();
+            const phone = document.getElementById('buyerPhone').value.trim();
+
+            if (!name || !email || !phone) {
+                alert("Please fill in all your data (Name, Email, and Phone Number).");
+                return;
+            }
+
+            const waNumber = "6285222933101";
+            const message = `Hello, I have made a payment for iOS Calculator PRO!%0A%0A*Plan Selected:* ${selectedPrice}%0A*Name:* ${name}%0A*Email:* ${email}%0A*Phone:* ${phone}%0A%0APlease activate my VIP access. Thank you!`;
+
+            window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank');
+
+            isPremium = true;
+            freeLimit = 99999;
+            badgeStatus.innerText = 'PRO VIP';
+            badgeStatus.classList.add('premium');
+            usageInfo.innerText = 'Access: Unlimited (PRO)';
+            closeModal('paywallModal');
+            alert('Redirecting to WhatsApp to send payment proof. Thank you!');
+        }
+
+        function updateHistoryUI() {
+            const historyList = document.getElementById('historyList');
+            if (calculationHistory.length === 0) {
+                historyList.innerHTML = '<p style="color: #666; text-align: center; margin-top: 40px;">No history yet.</p>';
+                return;
+            }
+            
+            historyList.innerHTML = calculationHistory.map(item => `
+                <div class="history-item">
+                    <span>${item}</span>
+                    <span style="font-size: 11px; color: #555;">Saved</span>
+                </div>
+            `).join('');
+        }
+
+        function openPaywallModal() {
+            document.getElementById('stepPricing').style.display = 'block';
+            document.getElementById('stepPayment').style.display = 'none';
+            document.getElementById('modalTitle').innerText = 'Unlock PRO';
+            openModal('paywallModal');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+    </script>
+</body>
+</html>
